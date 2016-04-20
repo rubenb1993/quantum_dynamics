@@ -5,6 +5,8 @@
 >>> from math import pi
 >>> import scipy.sparse.linalg as linalg
 >>> from sympy.functions.special.delta_functions import Heaviside
+>>> from mpl_toolkits.mplot3d import Axes3D
+...
 >>> %matplotlib inline
 ```
 
@@ -198,4 +200,19 @@
 ... for t in range(timesteps):
 ...     psi[:,t+1] = np.dot(C,psi[:,t])
 ...     psi[:,t+1] = psi[:,t+1]/np.linalg.norm(psi[:,t+1])
+```
+
+```python
+>>> nodes = 500
+>>> V = np.zeros((nodes,nodes))
+...
+>>> for xx in range(nodes):
+...     V[xx,100] = 1e23*((Heaviside(xx)-Heaviside(xx-150))+(Heaviside(xx-200)-Heaviside(xx-250))+Heaviside(xx-300))
+...
+>>> plt.plot(V[:,100])
+[<matplotlib.lines.Line2D at 0xcb67400>]
+```
+
+```python
+
 ```
