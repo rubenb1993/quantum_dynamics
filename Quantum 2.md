@@ -1,3 +1,9 @@
+# Crank Nicholson for Quantum Dynamics
+
+Code by Ruben Biesheuvel and Alexander Harms
+
+This code uses a Crank Nicholson method to evaluate the time evaluation of a wave function governed by the Schrödinger equation.
+
 ```python
 >>> import numpy as np
 >>> import matplotlib.pyplot as plt
@@ -53,6 +59,8 @@
 
 # Crank Nicholson for square well
 
+A stationary Guassian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the Schrödinger equation. This is approximated using a Crank Nicholson method, and with continous boundary conditions (i.e. the x axis begin is "tied" to the end).
+
 ```python
 >>> # Set parameters
 ... h = 1e-5 #timestep width
@@ -104,7 +112,6 @@
 >>> plt.plot(np.absolute(psi[:,0:500:100]))
 >>> plt.plot(V/abs(V0)) #plot normalized potential well
 >>> plt.xlim(xmin=0,xmax =2**8 )
-(0, 256)
 ```
 
 # Crank Nicholson for tunneling
@@ -172,15 +179,19 @@
 >>> xmax = 1
 >>> a = 1 / (nodes-1)
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 600
+>>> timesteps = 1000
+>>> wall = int(2*nodes/3)
+>>> middle = int(nodes / 2)
 ...
 >>> #Make initial wave function using x-lexicographic ordering of gridpoints
-... psi = np.zeros(shape = (nodes, 1), dtype= np.cfloat)
->>> width = 0.01
->>> p0 = 50
+... psi = np.zeros(shape = (len(x), ), dtype= np.cfloat)
+>>> width = 0.05
+>>> p0 = 500
 >>> E0 = p0**2 / 2
->>> V0 = E0 / 0.6
->>> psi = np.exp(-((x-0.1)**2 / (2*width**2))) * np.exp(1j*x*p0)
+>>> wave_position = np.arange(0,wall*a - 3*width,3*width)
+>>> #psi = np.exp(-((x-0.1)**2 / (2*width**2))) * np.exp(1j*x*p0)
+... for i in range(len(wave_position)):
+...     psi += np.exp(-((x-wave_position[i])**2 / (2*width**2))) * np.exp(1j*x*p0)
 >>> psi = psi / np.linalg.norm(psi)
 >>> psi2 = np.tile(psi, (nodes, 1)) #Make a 2d vector by stacking Gaussians
 >>> psi2 = psi2.reshape(-1) #Make into 1d vector
@@ -189,13 +200,10 @@
 ... V = np.zeros((nodes, nodes))
 >>> V0 = 1e6
 >>> aa = 5
->>> bb = 40
->>> middle = int(nodes / 2)
->>> wall = int(nodes/5)
+>>> bb = 10
 >>> for xx in range(nodes):
 ...     V[xx,wall] = V0*(math.ceil((Heaviside(xx)-Heaviside(xx-(middle-bb-0.5*aa)))+(Heaviside(xx-(middle-0.5*aa))\
 ...                                             -Heaviside(xx-(middle+0.5*aa)))+Heaviside(xx-(middle+0.5*aa+bb))))
-...
 ...
 >>> #Make left hand side vector by expanding the 1D case (using dirichlet boundary conditions at 0)
 ... A1D = sp.diags([1/(4*a**2), 1j/h - 1/(2*a**2), 1 / (4*a**2)], [-1, 0 ,1], shape = (nodes, nodes))
@@ -211,11 +219,19 @@
 >>> #Using a bicgstab algorithm, solve A*psi(n+1) = B*psi(n) for psi(n+1)
 ... psi2_old = psi2
 >>> psi2_new = psi2
+>>> xx = range(nodes)
+...
 >>> for t in range(timesteps):
 ...     b = B2D.dot(psi2_old)
 ...     psi2_new = linalg.bicgstab(A2D, b)[0]
 ...     psi2_new = psi2_new / np.linalg.norm(psi2_new)
 ...     psi2_old = psi2_new
+...     if t%100 == 0:
+...         psi2_plot = psi2_new.reshape(nodes, -1)
+...         fig = plt.figure()
+...         ax = fig.add_subplot(111)
+...         ax.contourf(X[:,wall:], Y[:,wall:], np.absolute(psi2_plot[:,wall:]))
+...         plt.show()
 ...
 >>> psi2_plot = psi2_new.reshape(nodes, -1) #reshape for plotting
 ```
@@ -223,7 +239,17 @@
 ```python
 >>> xx = range(nodes)
 >>> hf = plt.figure()
+>>> V_plot = V[:,wall]
+>>> X_wall = [wall for i in range(nodes)]
+>>> Y_wall = range(nodes)
 >>> X, Y = np.meshgrid(xx, xx)
->>> plt.contour(X[:,wall:], Y[:,wall:], np.absolute(psi2_plot[:,wall:]))
+>>> #plt.contourf(X[:,wall:], Y[:,wall:], np.absolute(psi2_plot[:,wall:]))
+... fig = plt.figure()
+>>> ax = fig.add_subplot(111)
+>>> ax.contourf(X[:,:], Y[:,:], np.absolute(psi2_plot[:,:]))
 >>> plt.show()
+```
+
+```python
+
 ```
