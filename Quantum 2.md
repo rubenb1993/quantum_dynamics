@@ -1,5 +1,7 @@
 ```python
 >>> import numpy as np
+>>> from numpy.fft import fft
+>>> from numpy.fft import ifft
 >>> import matplotlib.pyplot as plt
 >>> import scipy.sparse as sp
 >>> from math import pi
@@ -7,8 +9,10 @@
 >>> import scipy.sparse.linalg as linalg
 >>> from sympy.functions.special.delta_functions import Heaviside
 >>> from mpl_toolkits.mplot3d import Axes3D
+>>> from matplotlib import animation
 ...
->>> %matplotlib inline
+...
+>>> #%matplotlib inline
 ```
 
 ```python
@@ -61,7 +65,7 @@
 >>> xmax = 1
 >>> a = 1 / (nodes-1) #space between nodes
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 500
+>>> timesteps = 10000
 ...
 >>> #initial wave function
 ... psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
@@ -104,7 +108,31 @@
 >>> plt.plot(np.absolute(psi[:,0:500:100]))
 >>> plt.plot(V/abs(V0)) #plot normalized potential well
 >>> plt.xlim(xmin=0,xmax =2**8 )
-(0, 256)
+```
+
+```python
+>>> fig = plt.figure()
+>>> ax = plt.axes(xlim=(0, 1), ylim=(0, 1))
+>>> line, = ax.plot([], [], lw=2)
+...
+...
+>>> # initialization function: plot the background of each frame
+... def init():
+...     line.set_data([], [])
+...     return line,
+...
+...
+>>> # animation function.  This is called sequentially
+... def animate(i):
+...     y = np.absolute(psi[:,i])
+...     line.set_data(x, y)
+...     return line,
+...
+>>> # call the animator.  blit=True means only re-draw the parts that have changed.
+... anim = animation.FuncAnimation(fig, animate, init_func=init,
+...            frames=10000, interval=20, blit=True)
+...
+>>> plt.show()
 ```
 
 # Crank Nicholson for tunneling
@@ -117,7 +145,7 @@
 >>> xmax = 1
 >>> a = 1 / (nodes-1)
 >>> x = np.linspace(xmin,xmax,nodes)
->>> timesteps = 500
+>>> timesteps = 10000
 ...
 >>> #Set up wave funciton
 ... psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
@@ -162,6 +190,31 @@
 >>> plt.xlim(xmin=900, xmax=1250)
 ```
 
+```python
+>>> fig = plt.figure()
+>>> ax = plt.axes(xlim=(0, 1), ylim=(0, 1))
+>>> line, = ax.plot([], [], lw=2)
+...
+...
+>>> # initialization function: plot the background of each frame
+... def init():
+...     line.set_data([], [])
+...     return line,
+...
+...
+>>> # animation function.  This is called sequentially
+... def animate(i):
+...     y = np.absolute(psi[:,i])
+...     line.set_data(x, y)
+...     return line,
+...
+>>> # call the animator.  blit=True means only re-draw the parts that have changed.
+... anim = animation.FuncAnimation(fig, animate, init_func=init,
+...            frames=10000, interval=20, blit=True)
+...
+>>> plt.show()
+```
+
 # Crank Nicholson 2-D
 
 ```python
@@ -172,7 +225,7 @@
 >>> xmax = 1
 >>> a = 1 / (nodes-1)
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 600
+>>> timesteps = 200
 ...
 >>> #Make initial wave function using x-lexicographic ordering of gridpoints
 ... psi = np.zeros(shape = (nodes, 1), dtype= np.cfloat)
@@ -226,4 +279,8 @@
 >>> X, Y = np.meshgrid(xx, xx)
 >>> plt.contour(X[:,wall:], Y[:,wall:], np.absolute(psi2_plot[:,wall:]))
 >>> plt.show()
+```
+
+```python
+
 ```
