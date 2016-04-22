@@ -1,7 +1,5 @@
 ```python
 >>> import numpy as np
->>> from numpy.fft import fft
->>> from numpy.fft import ifft
 >>> import matplotlib.pyplot as plt
 >>> import scipy.sparse as sp
 >>> from math import pi
@@ -236,6 +234,8 @@
 >>> psi = np.exp(-((x-0.1)**2 / (2*width**2))) * np.exp(1j*x*p0)
 >>> psi = psi / np.linalg.norm(psi)
 >>> psi2 = np.tile(psi, (nodes, 1)) #Make a 2d vector by stacking Gaussians
+>>> psi2_plot = np.zeros((nodes, nodes, timesteps+1), dtype= np.cfloat)
+>>> psi2_plot[:,:,0] = psi2
 >>> psi2 = psi2.reshape(-1) #Make into 1d vector
 ...
 >>> #Make Potential barrier
@@ -262,6 +262,7 @@
 >>> B2D += 0.5 * sp.diags(V.reshape(-1), 0)
 ...
 >>> #Using a bicgstab algorithm, solve A*psi(n+1) = B*psi(n) for psi(n+1)
+...
 ... psi2_old = psi2
 >>> psi2_new = psi2
 >>> for t in range(timesteps):
@@ -269,8 +270,9 @@
 ...     psi2_new = linalg.bicgstab(A2D, b)[0]
 ...     psi2_new = psi2_new / np.linalg.norm(psi2_new)
 ...     psi2_old = psi2_new
-...
->>> psi2_plot = psi2_new.reshape(nodes, -1) #reshape for plotting
+...     psi2_plot[:,:,t+1] = psi2_new.reshape(nodes, -1) #reshape for plotting
+>>> print(psi2_plot[:,:,0].shape)
+(256, 256)
 ```
 
 ```python
@@ -279,6 +281,43 @@
 >>> X, Y = np.meshgrid(xx, xx)
 >>> plt.contour(X[:,wall:], Y[:,wall:], np.absolute(psi2_plot[:,wall:]))
 >>> plt.show()
+```
+
+```python
+>>> fig, ax = plt.subplots()
+...
+>>> xx= range(nodes)
+>>> X,Y = np.meshgrid(xx,xx)
+>>> Z = np.zeros(X.shape)
+>>> def init():
+...     cont = ax.contourf( X, Y, Z )
+...     cbar = plt.colorbar( cont )
+...     return cont,
+>>> def animate(t):
+...     xx = range(nodes)
+...     X, Y = np.meshgrid( xx, xx )
+...     Z = np.absolute(psi2_plot[:,:,t+1])
+...     cont = ax.contourf( X, Y, Z )
+...     return cont,
+>>> #anim = animation.FuncAnimation(fig, animate, frames=200, init_func=init)
+... ani = animation.FuncAnimation( fig, animate, frames = 200, interval = 1,
+>>> repeat = False,  init_func = init,)
+>>> plt.show()
+```
+
+```python
+
+```
+
+```python
+
+[[  0   0   0 ...,   0   0   0]
+ [  1   1   1 ...,   1   1   1]
+ [  2   2   2 ...,   2   2   2]
+ ..., 
+ [253 253 253 ..., 253 253 253]
+ [254 254 254 ..., 254 254 254]
+ [255 255 255 ..., 255 255 255]]
 ```
 
 ```python
