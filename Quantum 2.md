@@ -13,6 +13,8 @@ This code uses a Crank Nicholson method to evaluate the time evaluation of a wav
 >>> import scipy.sparse.linalg as linalg
 >>> from sympy.functions.special.delta_functions import Heaviside
 >>> from mpl_toolkits.mplot3d import Axes3D
+>>> from IPython.display import Image
+...
 ...
 >>> %matplotlib inline
 ```
@@ -59,7 +61,36 @@ This code uses a Crank Nicholson method to evaluate the time evaluation of a wav
 
 # Crank Nicholson for square well
 
-A stationary Guassian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the Schrödinger equation. This is approximated using a Crank Nicholson method, and with continous boundary conditions (i.e. the x axis begin is "tied" to the end).
+A stationary Guassian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the Schrödinger equation. This is approximated using a Crank Nicholson method, and with continous boundary conditions (i.e. the x axis begin is "tied" to the end). The equation that is solved with the Crank Nicholson method is the following
+
+$$ i \hbar \frac{\psi(t+h) - \psi(t)}{h} = \frac{ \hat{H} \psi(t) + \hat{H} \psi(t+h)}{2}$$,
+
+where h is the ''width'' of the time step, and where $\hat{H}$ is defined as
+
+$$ \hat{H} = \frac{\hat{p}^2}{2m} + \hat{V}$$. 
+
+The momentum operator can be discretized in a grid with continuous boundary conditions, and with equal spacing $a$, the matrix of the Hamiltonian is:
+
+$$ \hat{H} = \begin{bmatrix}
+1/a^2 + V_0 & -1/2a^2 & 0 & \ldots  & \ldots &  -1/2a^2 \\
+-1/2a^2 & 1/a^2 + V_1 & -1/2a^2 & 0 & \ldots & 0  \\
+0 & \ddots & \ddots & \ddots & \ldots & 0 \\
+0 & \ldots &  0 & -1/2a^2  & 1/a^2 + V_{n-1} & -1/2a^2 & \\
+-1/2a^2 & 0 & \ldots & 0 & -1/2a^2&  1/a^2 + V_n \\
+\end{bmatrix}
+$$,
+
+where $V_i$ is the potential at point $i$, and with the top right and bottom left element filled in due to the continuous boundary conditions.
+
+The system that is being solved is then expressed as
+
+$$ \left( \frac{i \hbar}{h} - \frac{\hat{H}}{2}\right) \psi(t + h) = \left( \frac{i \hbar}{h} + \frac{\hat{H}}{2} \right) \psi(t)$$,
+
+where $\psi(t+h)$ is the desired quantity, and the rest is known. This expression can be simplified to a linear equation as $A \mathbf{x} = \mathbf{b}$, where $A = \left( \frac{i \hbar}{h} - \frac{\hat{H}}{2}\right) $, $\mathbf{x}$ the desired quantity $\psi(t+h)$ and $\mathbf{b} = \left( \frac{i \hbar}{h} + \frac{\hat{H}}{2}\right) \psi(t)$.
+
+Because the coefficient matrix $A$ has an imaginary diagonal, this is not a Hermitian matrix. An algorithm designed for solving such a system can used, two of which are the Bi-Conjugate Gradient Stabalized (BiCGStab) algorithm and the Complex Orthogonal Conjugate Gradient (COCG) algorithm. 
+
+In this code, the BiCGStab algorithm has been implemented due to it being readily available in the SciPy package.
 
 ```python
 >>> # Set parameters
@@ -170,6 +201,29 @@ A stationary Guassian Wave packet is initialized in an "infinite" potential well
 ```
 
 # Crank Nicholson 2-D
+
+The 2-D method of Crank Nicholson makes use of a lexicographic ordering of nodes (image taken from [1]), 
+<img src="lexicograph.png",width=200,height=200>.
+
+This results in the solution vector $u \in \mathbb{R}^{nodes^2}$ and the Coefficient matrix $A \in \mathbb{R}^{(nodes^2)~ \times~ (nodes^2)}$.
+
+For this two dimensional problem, the boundary conditions are taken to be dirichlet boundary conditions, with the forcing term equal to 0 for simplicity. If this is done, the coefficient matrix can be expressed as [1]:
+
+$$\hat{H}_{2D} = \hat{H}_{1D} \otimes \mathbb{1} + \mathbb{1} \otimes \hat{H}_{1D}$$,
+
+where $H_{1D}$ is the Hamiltonian matrix for the 1D case without the potential, and $\mathbb{1}$ is the identity matrix with the same size as $H_{1D}$. The potential is removed due to the fact that it is a 2D potential that can not be expressed in a 1D case. The potential diagonal is added after the 2D kinetic energy matrix is generated.
+
+The system that is being solved can therefore be expressed as
+
+$$ \left( \frac{i \hbar}{h} - \frac{\hat{H}_{2D}}{2} - \frac{\hat{V}}{2} \right) \psi(t + h) = \left( \frac{i \hbar}{h} + \frac{\hat{H}_{2D}}{2} + \frac{\hat{V}}{2} \right) \psi(t)$$,
+
+where $\psi(t+h)$ is the desired quantity, and the rest is known. This expression can be simplified to a linear equation as $A \mathbf{x} = \mathbf{b}$, where $A = \left( \frac{i \hbar}{h} - \frac{\hat{H}_{2D}}{2} - \frac{\hat{V}}{2} \right) $, $\mathbf{x}$ the desired quantity $\psi(t+h)$ and $\mathbf{b} = \left( \frac{i \hbar}{h} + \frac{\hat{H}_{2D}}{2} + \frac{\hat{V}}{2} \right) \psi(t)$.
+
+This system is again solved with a BiCGStab algorithm.
+
+$\large \bf{References}$
+
+[1] C. Vuik and D.J.P. Lahaye. $\textit{Lecture notes in Scientific Computing}$. Sept. 2015.
 
 ```python
 >>> #Set up parameters
