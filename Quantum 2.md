@@ -8,6 +8,7 @@ This code uses a Crank Nicholson method to evaluate the time evaluation of a wav
 >>> import numpy as np
 >>> import matplotlib.pyplot as plt
 >>> import scipy.sparse as sp
+>>> import matplotlib
 >>> from math import pi
 >>> import math
 >>> import scipy.sparse.linalg as linalg
@@ -17,50 +18,75 @@ This code uses a Crank Nicholson method to evaluate the time evaluation of a wav
 >>> import matplotlib.cm as cm
 >>> from IPython.display import Image
 ...
-...
-...
 >>> #%matplotlib inline
 ```
 
 ```python
->>> h = 1e-5
->>> nodes = 2000
->>> xmin = 0
->>> xmax = 1
->>> a = 1/(nodes - 1)
->>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 100
->>> A = sp.diags([1/(2*a**2), 1j/h- 1/a**2,1/(2*a**2)], [-1, 0 ,1], shape = (nodes, nodes)).tolil()
+>>> #Functions for 1D animations
 ...
->>> psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
->>> width = 0.01
->>> p0 = 50
->>> E0 = p0**2 / 2
->>> V0 = E0 / 0.6
->>> psi[:, 0] = np.exp(-((x - 0.38)**2 / (2 * width**2)))*np.exp(1j*x*p0)
->>> psi[:, 0] = psi[:, 0] / np.linalg.norm(psi[:, 0])
+... # initialization function: plot the background of each frame
+... def init_1D():
+...     "Initializes the 1d animation with a clean slate"
+...     line.set_data([], [])
+...     V_x.set_data([], [])
+...     return line,V_x,
 ...
->>> V = np.zeros(nodes)
->>> for xx in range(nodes):
-...     V[xx] = V0 + V0*(Heaviside(0.4/a - xx) - Heaviside(0.4/a + 1/(a*np.sqrt(V0)) - xx))
+>>> # animation function.  This is called sequentially
+... def animate_1D(i):
+...     "sets the frames for the animation in 1d"
+...     y = np.absolute(psi[:,i])
+...     line.set_data(x, y)
+...     V_x.set_data(x,V)
+...     return line, V_x,
 ...
->>> A -= sp.diags(V, 0)
->>> A[0, -1] = 1 / (2*a**2)
->>> A[-1, 0] = 1 / (2*a**2)
->>> A = A.tocsc()
+>>> def animation_1D():
+...     "calls the animation function in 1d"
+...     anim = animation.FuncAnimation(fig, animate_1D, init_func=init_1D,
+...            frames=timesteps, interval=20, blit=False, repeat=False)
+...     return anim
 ...
->>> Ainv = linalg.inv(A)
+>>> def init_without_wall():
+...     "initializes the animation with a clean slate"
+...     cont = ax.contourf( X_wall, Y_wall, Z, cmap = cm.bone)
+...     cbar = plt.colorbar( cont )
+...     return cont
+>>> def animate_without_wall(t):
+...     "sets the frames for the animation with no wall"
+...     Z = Z_wall[:,:,t]
+...     cont = ax.contourf( X_wall, Y_wall, Z, cmap = cm.bone)
+...     return cont
 ...
->>> for t in range(timesteps):
-...     psi[:, t+1] = Ainv * 1j/h * psi[:, t]
-...     psi[:, t+1] = psi[:, t+1] / np.linalg.norm(psi[:, t+1])
-```
-
-```python
->>> plt.plot(np.absolute(psi[:, 0:60:10]))
->>> plt.plot(V / V0)
->>> plt.xlim(xmin = 500, xmax =1000)
->>> plt.show()
+>>> def animation_2d_no_wall():
+...     "calls the animation function in 2d for no wall"
+...     anim2D = matplotlib.animation.FuncAnimation( fig, animate_without_wall, frames = animation_frames, interval = 1,
+...                 repeat = False,  init_func = init_without_wall,)
+...     return anim2D
+...
+>>> def init_2d():
+...     "initializes the 2d plot for the whole domain with a clean slate"
+...     cont = ax.contourf( X, Y, Z, cmap = cm.bone)
+...     V_x = ax.contour(xx,xx, V)
+...     cbar = plt.colorbar( cont )
+...     return cont, V_x,
+...
+>>> def animate_2d(t):
+...     "sets the frames for the animation in 2d with the whole domain"
+...     Z = z[:,:,t]
+...     cont = ax.contourf( X, Y, Z, cmap = cm.bone)
+...     V_x = ax.contour(xx, xx, V)
+...     return cont, V_x
+...
+>>> def animation_2d():
+...     "calls the animation function in 2d for the whole domain"
+...     anim2D = matplotlib.animation.FuncAnimation( fig, animate_2d, frames = animation_frames, interval = 1,
+...                 repeat = False,  init_func = init_2d,)
+...     return anim2D
+...
+>>> def save_anim(file,title):
+...     "saves the animation with a desired title"
+...     Writer = animation.writers['ffmpeg']
+...     writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
+...     file.save(title + '.mp4', writer=writer)
 ```
 
 # Crank Nicholson for square well
@@ -144,48 +170,20 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ```
 
 ```python
->>> plt.plot(np.absolute(psi[:,0:500:100]))
->>> plt.plot(V/abs(V0)) #plot normalized potential well
->>> plt.xlim(xmin=0,xmax =2**8 )
->>> plt.show()
-```
-
-```python
->>> fig = plt.figure()
+>>> #Show animations
+... fig = plt.figure()
 >>> ax = plt.axes(xlim=(0, 1), ylim=(0, 1))
 >>> line, = ax.plot([], [], lw=2)
 >>> V_x, = ax.plot([],[], lw=2)
 ...
-...
->>> # initialization function: plot the background of each frame
-... def init():
-...     line.set_data([], [])
-...     V_x.set_data([], [])
-...
-...     return line,V_x,
-...
-...
->>> # animation function.  This is called sequentially
-... def animate(i):
-...     y = np.absolute(psi[:,i])
-...     line.set_data(x, y)
-...     V_x.set_data(x,V)
-...
-...     return line, V_x,
-...
 >>> # call the animator.  blit=True means only re-draw the parts that have changed.
-... animsqwell = animation.FuncAnimation(fig, animate, init_func=init,
-...            frames=timesteps, interval=20, blit=False, repeat=False)
-...
+... anim_sq_well = animation_1D()
 ...
 >>> plt.show()
 ```
 
 ```python
->>> # Set up formatting for the movie files
-... Writer = animation.writers['ffmpeg']
->>> writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
->>> animsqwell.save('1DSquarewell.mp4', writer=writer)
+>>> save_anim(anim_sq_well,'square_well')
 ```
 
 # Crank Nicholson for tunneling
@@ -238,45 +236,19 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ```
 
 ```python
->>> plt.plot(np.absolute(psi[:, 0:100:50]))
->>> plt.plot(V / abs(V0))
->>> plt.xlim(xmin=900, xmax=1250)
-```
-
-```python
->>> fig = plt.figure()
+>>> #Show an animation
+... fig = plt.figure()
 >>> ax = plt.axes(xlim=(0, 1), ylim=(0, 1))
->>> print(abs(V0))
 >>> line, = ax.plot([], [], lw=2)
 >>> V_x, = ax.plot([],[], lw=2)
 ...
->>> # initialization function: plot the background of each frame
-... def init():
-...     line.set_data([], [])
-...     V_x.set_data([], [])
-...
-...     return line,V_x,
-...
-...
->>> # animation function.  This is called sequentially
-... def animate(i):
-...     y = np.absolute(psi[:,i])
-...     line.set_data(x, y)
-...     V_x.set_data(x,V)
-...     return line, V_x,
-...
 >>> # call the animator.  blit=True means only re-draw the parts that have changed.
-... animtunnel = animation.FuncAnimation(fig, animate, init_func=init,
-...            frames=timesteps, interval=20, blit=True, repeat=False)
-...
+... animtunnel = animation_1D()
 >>> plt.show()
 ```
 
 ```python
->>> # Set up formatting for the movie files
-... Writer = animation.writers['ffmpeg']
->>> writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
->>> animtunnel.save('1DTunneling.mp4', writer=writer)
+>>> save_anim(animtunnel,'1d_tunnel')
 ```
 
 # Crank Nicholson 2-D
@@ -312,14 +284,14 @@ $\large \bf{References}$
 >>> xmax = 1
 >>> a = 1 / (nodes-1)
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 2000
+>>> timesteps = 5000
 >>> wall = int(2*nodes/3)
 >>> middle = int(nodes / 2)
 ...
 >>> #Make initial wave function using x-lexicographic ordering of gridpoints
 ... psi = np.zeros(shape = (len(x), ), dtype= np.cfloat)
 >>> width = 0.05
->>> p0 = 500
+>>> p0 = 5000
 >>> E0 = p0**2 / 2
 >>> wave_position = np.arange(0,wall*a - 3*width,3*width)
 >>> #psi = np.exp(-((x-0.1)**2 / (2*width**2))) * np.exp(1j*x*p0)
@@ -356,58 +328,57 @@ $\large \bf{References}$
 ... psi2_old = psi2
 >>> psi2_new = psi2
 >>> xx = range(nodes)
+>>> anim_count = 0
+>>> animation_frames = int((timesteps+1)/5)
 ...
+>>> psi2_animate  = np.zeros((nodes, nodes, animation_frames ), dtype = np.cfloat)
 >>> for t in range(timesteps):
 ...     b = B2D.dot(psi2_old)
 ...     psi2_new = linalg.bicgstab(A2D, b)[0]
 ...     psi2_new = psi2_new / np.linalg.norm(psi2_new)
 ...     psi2_old = psi2_new
 ...     psi2_plot[:,:,t+1] = psi2_new.reshape(nodes, -1) #reshape for plotting
+...     if (t+1)%5 == 0:
+...         psi2_animate[:,:,anim_count] = psi2_plot[:,:,t+1]
+...         anim_count += 1
 ```
 
 ```python
->>> xx = range(nodes)
->>> hf = plt.figure()
->>> V_plot = V[:,wall]
->>> X_wall = [wall for i in range(nodes)]
->>> Y_wall = range(nodes)
->>> X, Y = np.meshgrid(xx, xx)
->>> #plt.contourf(X[:,wall:], Y[:,wall:], np.absolute(psi2_plot[:,wall:]))
-... fig = plt.figure()
->>> ax = fig.add_subplot(111)
->>> ax.contourf(X[:,:], Y[:,:], np.absolute(psi2_plot[:,:]))
+>>> #Animation of only past the wall
+... fig, ax = plt.subplots()
+...
+>>> xx= range(nodes)
+>>> X,Y = np.meshgrid(xx,xx)
+>>> X_wall = X[:,wall:]
+>>> Y_wall = Y[:,wall:]
+>>> Z = np.zeros(X_wall.shape)
+>>> z = np.absolute(psi2_animate)
+>>> Z_wall = z[:,wall:,:]
+...
+...
+>>> interference_no_wall = animation_2d_no_wall()
 >>> plt.show()
 ```
 
 ```python
->>> fig, ax = plt.subplots()
+>>> save_anim(interference_no_wall,'interference_no_wall')
+```
+
+```python
+>>> #Animation including everything
+... fig, ax = plt.subplots()
 ...
 >>> xx= range(nodes)
 >>> X,Y = np.meshgrid(xx,xx)
 >>> Z = np.zeros(X.shape)
->>> def init():
-...     cont = ax.contourf( X, Y, Z, cmap = cm.bone)
-...     V_x = ax.contour(xx,xx, V)
-...     cbar = plt.colorbar( cont )
-...     return cont, V_x,
->>> def animate(t):
-...     xx = range(nodes)
-...     X, Y = np.meshgrid( xx, xx )
-...     Z = np.absolute(psi2_plot[:,:,t+1])
-...     cont = ax.contourf( X, Y, Z, cmap = cm.bone)
-...     V_x = ax.contour(xx, xx, V)
-...     return cont, V_x
->>> #anim = animation.FuncAnimation(fig, animate, frames=200, init_func=init)
-... anim2D = animation.FuncAnimation( fig, animate, frames = timesteps, interval = 1,
->>> repeat = False,  init_func = init,)
+>>> z = np.absolute(psi2_animate)
+...
+>>> interference_with_animation = animation_2d()
 >>> plt.show()
 ```
 
 ```python
->>> # Set up formatting for the movie files
-... Writer = animation.writers['ffmpeg']
->>> writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
->>> anim2D.save('2DDoubleslit.mp4', writer=writer)
+>>> save_anim(interference_with_animation,'interference_with_wall')
 ```
 
 # Crank-Nicholson 2D Square well
@@ -466,15 +437,6 @@ $\large \bf{References}$
 ...     psi_sq_new = psi_sq_new / np.linalg.norm(psi_sq_new)
 ...     psi_sq_old = psi_sq_new
 ...     psi_sq_plot[:,:,t+1] = psi_sq_new.reshape(nodes, -1) #reshape for plotting
-/Users/rubenbiesheuvel/anaconda/lib/python3.5/site-packages/ipykernel/__main__.py:29: DeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
-```
-
-```python
->>> xx = range(nodes)
->>> hf = plt.figure()
->>> X, Y = np.meshgrid(xx, xx)
->>> plt.contourf(X[0,:], Y[:,0], np.absolute(psi_sq_plot[:,:,0]))
->>> plt.show()
 ```
 
 ```python
@@ -483,29 +445,15 @@ $\large \bf{References}$
 >>> xx= range(nodes)
 >>> X,Y = np.meshgrid(xx,xx)
 >>> Z = np.zeros(X.shape)
->>> def init():
-...     cont = ax.contourf( X, Y, Z ,cmap = cm.bone)
-...     V_sq_x = ax.contour(xx, xx, V_sq)
-...     cbar = plt.colorbar( cont )
-...     return cont, V_sq_x,
->>> def animate(t):
-...     xx = range(nodes)
-...     X, Y = np.meshgrid( xx, xx )
-...     Z = np.absolute(psi_sq_plot[:,:,t+1])
-...     cont = ax.contourf( X, Y, Z, cmap = cm.bone)
-...     V_sq_x = ax.contour(xx, xx, V_sq)
-...     return cont, V_sq_x
->>> #anim = animation.FuncAnimation(fig, animate, frames=200, init_func=init)
-... anim2Dsq = animation.FuncAnimation( fig, animate, frames = timesteps, interval = 1,
->>> repeat = False,  init_func = init,)
+>>> z = np.absolute(psi_sq_plot)
+>>> V = V_sq
+...
+>>> anim_sq_well_2d = animation_2d()
 >>> plt.show()
 ```
 
 ```python
->>> # Set up formatting for the movie files
-... Writer = animation.writers['ffmpeg']
->>> writer = Writer(fps=50, metadata=dict(artist='Me'), bitrate=1800)
->>> anim2Dsq.save('2DSquareWell.mp4', writer=writer)
+>>> save_anim(anim_sq_well_2d,'Square_well_2d')
 ```
 
 ```python
