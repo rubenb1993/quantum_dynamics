@@ -63,7 +63,7 @@
 >>> xmax = 1
 >>> a = 1 / (nodes-1) #space between nodes
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 10000
+>>> timesteps = 100
 ...
 >>> #initial wave function
 ... psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
@@ -127,10 +127,18 @@
 ...     return line,
 ...
 >>> # call the animator.  blit=True means only re-draw the parts that have changed.
-... anim = animation.FuncAnimation(fig, animate, init_func=init,
-...            frames=10000, interval=20, blit=True)
+... animsqwell = animation.FuncAnimation(fig, animate, init_func=init,
+...            frames=timesteps, interval=20, blit=True, repeat=False)
+...
 ...
 >>> plt.show()
+```
+
+```python
+>>> # Set up formatting for the movie files
+... Writer = animation.writers['ffmpeg']
+>>> writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
+>>> animsqwell.save('1DSquarewell.mp4', writer=writer)
 ```
 
 # Crank Nicholson for tunneling
@@ -143,12 +151,12 @@
 >>> xmax = 1
 >>> a = 1 / (nodes-1)
 >>> x = np.linspace(xmin,xmax,nodes)
->>> timesteps = 10000
+>>> timesteps = 1000
 ...
 >>> #Set up wave funciton
 ... psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
 >>> width = 0.01
->>> p0 = 50
+>>> p0 = 500
 >>> psi[:, 0] = np.exp(-((x - 0.52)**2 / (2*width**2)))*np.exp(1j*x*p0)
 >>> psi[:, 0] = psi[:, 0] / np.linalg.norm(psi[:, 0])
 ...
@@ -207,10 +215,17 @@
 ...     return line,
 ...
 >>> # call the animator.  blit=True means only re-draw the parts that have changed.
-... anim = animation.FuncAnimation(fig, animate, init_func=init,
-...            frames=10000, interval=20, blit=True)
+... animtunnel = animation.FuncAnimation(fig, animate, init_func=init,
+...            frames=timesteps, interval=20, blit=True, repeat=False)
 ...
 >>> plt.show()
+```
+
+```python
+>>> # Set up formatting for the movie files
+... Writer = animation.writers['ffmpeg']
+>>> writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
+>>> animtunnel.save('1DTunneling.mp4', writer=writer)
 ```
 
 # Crank Nicholson 2-D
@@ -228,7 +243,7 @@
 >>> #Make initial wave function using x-lexicographic ordering of gridpoints
 ... psi = np.zeros(shape = (nodes, 1), dtype= np.cfloat)
 >>> width = 0.01
->>> p0 = 50
+>>> p0 = 200
 >>> E0 = p0**2 / 2
 >>> V0 = E0 / 0.6
 >>> psi = np.exp(-((x-0.1)**2 / (2*width**2))) * np.exp(1j*x*p0)
@@ -300,24 +315,20 @@
 ...     cont = ax.contourf( X, Y, Z )
 ...     return cont,
 >>> #anim = animation.FuncAnimation(fig, animate, frames=200, init_func=init)
-... ani = animation.FuncAnimation( fig, animate, frames = 200, interval = 1,
+... anim2D = animation.FuncAnimation( fig, animate, frames = timesteps, interval = 1,
 >>> repeat = False,  init_func = init,)
 >>> plt.show()
 ```
 
 ```python
-
+>>> # Set up formatting for the movie files
+... Writer = animation.writers['ffmpeg']
+>>> writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
+>>> anim2D.save('2DDoubleslit.mp4', writer=writer)
 ```
 
 ```python
 
-[[  0   0   0 ...,   0   0   0]
- [  1   1   1 ...,   1   1   1]
- [  2   2   2 ...,   2   2   2]
- ..., 
- [253 253 253 ..., 253 253 253]
- [254 254 254 ..., 254 254 254]
- [255 255 255 ..., 255 255 255]]
 ```
 
 ```python
