@@ -60,6 +60,7 @@ This code uses a Crank Nicholson method to evaluate the time evaluation of a wav
 >>> plt.plot(np.absolute(psi[:, 0:60:10]))
 >>> plt.plot(V / V0)
 >>> plt.xlim(xmin = 500, xmax =1000)
+>>> plt.show()
 ```
 
 # Crank Nicholson for square well
@@ -146,6 +147,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> plt.plot(np.absolute(psi[:,0:500:100]))
 >>> plt.plot(V/abs(V0)) #plot normalized potential well
 >>> plt.xlim(xmin=0,xmax =2**8 )
+>>> plt.show()
 ```
 
 ```python
@@ -173,7 +175,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ...
 >>> # call the animator.  blit=True means only re-draw the parts that have changed.
 ... animsqwell = animation.FuncAnimation(fig, animate, init_func=init,
-...            frames=timesteps, interval=20, blit=True, repeat=False)
+...            frames=timesteps, interval=20, blit=False, repeat=False)
 ...
 ...
 >>> plt.show()
@@ -305,12 +307,12 @@ $\large \bf{References}$
 ```python
 >>> #Set up parameters
 ... h = 1e-5
->>> nodes = 2**8
+>>> nodes = 2**7
 >>> xmin = 0
 >>> xmax = 1
 >>> a = 1 / (nodes-1)
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 1000
+>>> timesteps = 2000
 >>> wall = int(2*nodes/3)
 >>> middle = int(nodes / 2)
 ...
@@ -419,7 +421,7 @@ $\large \bf{References}$
 >>> a = 1 / (nodes-1)
 >>> x = np.linspace(xmin, xmax, nodes)
 >>> middle = int(nodes / 2)
->>> timesteps = 5000
+>>> timesteps = 500
 ...
 >>> #Make initial wave function using x-lexicographic ordering of gridpoints
 ... psi_sq = np.zeros(shape = (nodes, nodes), dtype= np.cfloat)
@@ -464,7 +466,7 @@ $\large \bf{References}$
 ...     psi_sq_new = psi_sq_new / np.linalg.norm(psi_sq_new)
 ...     psi_sq_old = psi_sq_new
 ...     psi_sq_plot[:,:,t+1] = psi_sq_new.reshape(nodes, -1) #reshape for plotting
-C:\Anaconda3\lib\site-packages\ipykernel\__main__.py:29: DeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
+/Users/rubenbiesheuvel/anaconda/lib/python3.5/site-packages/ipykernel/__main__.py:29: DeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
 ```
 
 ```python
@@ -502,7 +504,7 @@ C:\Anaconda3\lib\site-packages\ipykernel\__main__.py:29: DeprecationWarning: usi
 ```python
 >>> # Set up formatting for the movie files
 ... Writer = animation.writers['ffmpeg']
->>> writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
+>>> writer = Writer(fps=50, metadata=dict(artist='Me'), bitrate=1800)
 >>> anim2Dsq.save('2DSquareWell.mp4', writer=writer)
 ```
 
