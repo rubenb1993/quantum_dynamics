@@ -2,7 +2,7 @@
 
 Code by Ruben Biesheuvel and Alexander Harms
 
-This code uses a Crank-Nicholson method to evaluate the time evaluation of a wave function governed by the Schrödinger equation.
+This code uses a Crank-Nicholson method to evaluate the time evaluation of a wave function governed by the SchrÃ¶dinger equation.
 
 ```python
 >>> import numpy as np
@@ -91,7 +91,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 
 # Crank Nicholson for square well
 
-A stationary Guassian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the Schrödinger equation. This is approximated using a Crank Nicholson method, and with continous boundary conditions (i.e. the x axis begin is "tied" to the end). The equation that is solved with the Crank Nicholson method is the following
+A stationary Guassian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the SchrÃ¶dinger equation. This is approximated using a Crank Nicholson method, and with continous boundary conditions (i.e. the x axis begin is "tied" to the end). The equation that is solved with the Crank Nicholson method is the following
 
 $$ i \hbar \frac{\psi(t+h) - \psi(t)}{h} = \frac{ \hat{H} \psi(t) + \hat{H} \psi(t+h)}{2}$$,
 
@@ -470,73 +470,61 @@ $\large \bf{References}$
 # Calculation of the transmission coefficient
 
 ```python
->>> #Set up parameters
-... h = 1e-5
->>> nodes = 5000
+>>> # Set parameters
+... h = 1e-5 #timestep size
 >>> xmin = 0
 >>> xmax = 10
->>> a = 1 / (nodes - 1)
->>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 1000
+>>> nodes = 5000
 ...
->>> #Set up wave funciton
+>>> a = (xmax-xmin) / (nodes-1) #space between nodes
+>>> x = np.linspace(xmin, xmax, nodes)
+>>> timesteps = 500
+...
+>>> #initial wave function
 ... psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
->>> width = 0.01
+>>> width = 0.1
 >>> p0 = 300
->>> psi[:, 0] = np.exp(-((x - 4.5)**2 / (2*width**2))) * np.exp(1j*x*p0)
+>>> psi[:, 0] = np.exp(-((x-4.5)**2 / (2*width**2)))*np.exp(1j*x*p0)
 >>> psi[:, 0] = psi[:, 0] / np.linalg.norm(psi[:, 0])
 ...
->>> #Set up potential wall with height E0/0.6
+>>> #Make kinetic energy part of left hand side matrix
+...
+... #Make kinetic energy part of right hand side matrix
+...
+...
+...
+... #Set up potential wall with height E0/0.6
 ... E0 = p0**2 / 2
->>> param = 0.5
->>> V0 = E0 / param
->>> V = np.zeros(nodes)
->>> for xx in range(nodes):
-...     V[xx] =  - V0 * (Heaviside(0.5/a - xx) - Heaviside(0.5/a + 7/np.sqrt(2*V0)) - xx))
+>>> parameters = np.linspace(0.1, 3.1, 31)
+>>> T = np.zeros((len(parameters), 1))
+>>> for m in range(len(parameters)):
+...     V = np.zeros(nodes)
+...     V0 = E0 / parameters[m]
+...     for xx in range(nodes):
+...         V[xx] =  - V0 * (Heaviside(5/a - xx) - Heaviside(5/a + int(7/(a*np.sqrt(2*V0))) - xx))
 ...
->>> #Create left hand side matrix
-... A = sp.diags([1 / (4*a**2), 1j/h- 1/(2*a**2), 1 / (4*a**2)],[-1, 0 ,1],shape=(nodes, nodes)).tolil()
->>> A -= 0.5 * sp.diags(V, 0)
->>> A = A.tocsc()
->>> Ainv = linalg.inv(A)
->>> Ainv = Ainv.todense()
+...     #Create matrix A
+...     A = sp.diags([1 / (4*a**2), 1j/h - 1/(2*a**2), 1 / (4*a**2)],[-1, 0 ,1],shape=(nodes, nodes)).tolil()
+...     A -= 0.5 * sp.diags(V, 0)
+...     A = A.tocsc()
 ...
->>> #Create right hand side matrix
-... B = sp.diags([-1 / (4*a**2), 1j/h + 1/(2*a**2), -1 / (4*a**2)],[-1, 0, 1], shape = (nodes, nodes)).tolil()
->>> B += 0.5 * sp.diags(V, 0)
->>> B = B.todense()
+...     #Create matrix B
+...     B = sp.diags([-1 / (4*a**2), 1j/h + 1/(2*a**2), -1 / (4*a**2)],[-1, 0, 1],shape=(nodes, nodes)).tolil()
+...     B += 0.5*sp.diags(V, 0)
+...     B = B.tocsc()
 ...
->>> C = np.dot(Ainv,B)
+...     for t in range(timesteps):
+...         b = B.dot(psi[:,t])
+...         psi[:, t+1] = linalg.bicgstab(A,b)[0]
+...         psi[:, t+1] = psi[:, t+1] / np.linalg.norm(psi[:, t+1])
 ...
->>> for t in range(timesteps):
-...     psi[:, t+1] = np.dot(C, psi[:, t])
-...     psi[:, t+1] = psi[:, t+1] / np.linalg.norm(psi[:, t+1])
+...     T[m] = np.linalg.norm(psi[int(0.5*nodes):, timesteps])**2
 ```
 
 ```python
->>> fig = plt.figure()
->>> ax = plt.axes(xlim=(0, 10), ylim=(0, 1))
->>> print(abs(V0))
->>> line, = ax.plot([], [], lw=2)
->>> V_x, = ax.plot([],[], lw=2)
-...
->>> # initialization function: plot the background of each frame
-... def init():
-...     line.set_data([], [])
-...     V_x.set_data([], [])
-...     return line, V_x,
-...
-...
->>> # animation function: this will be called upon every frame with index i.
-... def animate(i):
-...     y = np.absolute(psi[:,i])
-...     line.set_data(x, y)
-...     V_x.set_data(x, V)
-...     return line, V_x,
-...
->>> # call the animator.  blit=True means only re-draw the parts that have changed.
-... animtunnel = animation.FuncAnimation(fig, animate, init_func=init, frames=timesteps, interval=20, blit=True, repeat=False)
-...
+>>> #Plot the transmission coefficient
+... plt.figure()
+>>> plt.plot(parameters, T)
 >>> plt.show()
 ```
 
