@@ -34,7 +34,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 >>> # animation function.  This is called sequentially
 ... def animate_1D(i):
 ...     "sets the frames for the animation in 1d"
-...     y = np.absolute(psi[:,i])
+...     y = np.absolute(psi_animate[:,i])
 ...     line.set_data(x, y)
 ...     V_x.set_data(x,V)
 ...     return line, V_x,
@@ -42,7 +42,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 >>> def animation_1D():
 ...     "calls the animation function in 1d"
 ...     anim = animation.FuncAnimation(fig, animate_1D, init_func=init_1D,
-...            frames=timesteps, interval=20, blit=False, repeat=False)
+...            frames=animation_frames, interval=20, blit=False, repeat=False)
 ...     return anim
 ...
 >>> def init_without_wall():
@@ -131,7 +131,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ...
 >>> a = 1 / (nodes-1) #space between nodes
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 1000
+>>> timesteps = 500
 ...
 >>> #initial wave function
 ... psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
@@ -142,7 +142,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> psi[:, 0] = psi[:, 0] / np.linalg.norm(psi[:, 0])
 ...
 >>> #Make square well
-... V0 = 200000
+... V0 = 1e6 #High number for "infinite" sq well
 >>> V = np.zeros(nodes)
 >>> for xx in range(nodes):
 ...     V[xx] =  -V0 * (Heaviside(0.35/a - xx) - Heaviside(0.55/a - xx))
@@ -150,24 +150,26 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> #Make left hand side matrix
 ... A = sp.diags([1 / (4*a**2), 1j/h - 1/(2*a**2), 1 / (4*a**2)],[-1, 0 ,1],shape=(nodes, nodes)).tolil()
 >>> A -= 0.5 * sp.diags(V, 0)
->>> A[0, -1] = 1 / (4*a**2)
->>> A[-1, 0] = 1 / (4*a**2)
 >>> A = A.tocsc()
->>> Ainv = linalg.inv(A)
->>> Ainv = Ainv.todense()
+...
 ...
 >>> #Make right hand side vector
 ... B = sp.diags([-1 / (4*a**2), 1j/h + 1/(2*a**2), -1 / (4*a**2)],[-1, 0, 1],shape=(nodes, nodes)).tolil()
 >>> B += 0.5*sp.diags(V, 0)
->>> B[0, -1] = -1 / (4*a**2)
->>> B[-1, 0] = -1 / (4*a**2)
->>> B = B.todense()
+>>> B = B.tocsc()
 ...
->>> C = np.dot(Ainv,B)
+>>> anim_constant = 5
+>>> anim_count = 0
+>>> animation_frames = int((timesteps+1)/anim_constant)
 ...
+>>> psi_animate = np.zeros(shape= (nodes,animation_frames), dtype = np.cfloat)
 >>> for t in range(timesteps):
-...     psi[:, t+1] = np.dot(C, psi[:, t])
+...     b = B.dot(psi[:,t])
+...     psi[:, t+1] = linalg.bicgstab(A,b)[0]
 ...     psi[:, t+1] = psi[:, t+1] / np.linalg.norm(psi[:, t+1])
+...     if (t+1)%anim_constant == 0:
+...         psi_animate[:,anim_count] = psi[:,t+1]
+...         anim_count += 1
 ```
 
 ```python
@@ -216,24 +218,25 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> #Create left hand side matrix
 ... A = sp.diags([1 / (4*a**2), 1j/h- 1/(2*a**2), 1 / (4*a**2)],[-1, 0 ,1],shape=(nodes, nodes)).tolil()
 >>> A -= 0.5 * sp.diags(V, 0)
->>> A[0, -1] = 1 / (4*a**2)
->>> A[-1, 0] = 1 / (4*a**2)
 >>> A = A.tocsc()
->>> Ainv = linalg.inv(A)
->>> Ainv = Ainv.todense()
 ...
 >>> #Create right hand side matrix
 ... B = sp.diags([-1 / (4*a**2), 1j/h + 1/(2*a**2), -1 / (4*a**2)],[-1, 0, 1], shape = (nodes, nodes)).tolil()
 >>> B += 0.5 * sp.diags(V, 0)
->>> B[0, -1] = -1 / (4*a**2)
->>> B[-1, 0] = -1 / (4*a**2)
->>> B = B.todense()
+>>> B = B.tocsc()
 ...
->>> C = np.dot(Ainv,B)
+>>> anim_constant = 2
+>>> anim_count = 0
+>>> animation_frames = int((timesteps+1)/anim_constant)
 ...
+>>> psi_animate = np.zeros(shape = (nodes,animation_frames), dtype = np.cfloat)
 >>> for t in range(timesteps):
-...     psi[:, t+1] = np.dot(C, psi[:, t])
+...     b = B.dot(psi[:,t])
+...     psi[:, t+1] = linalg.bicgstab(A,b)[0]
 ...     psi[:, t+1] = psi[:, t+1] / np.linalg.norm(psi[:, t+1])
+...     if (t+1)%anim_constant == 0:
+...         psi_animate[:,anim_count] = psi[:, t+1]
+...         anim_count += 1
 ```
 
 ```python
@@ -328,9 +331,10 @@ $\large \bf{References}$
 ...
 ... psi2_old = psi2
 >>> psi2_new = psi2
->>> xx = range(nodes)
+...
+>>> anim_constant = 5
 >>> anim_count = 0
->>> animation_frames = int((timesteps+1)/5)
+>>> animation_frames = int((timesteps+1)/anim_constant)
 ...
 >>> psi2_animate  = np.zeros((nodes, nodes, animation_frames ), dtype = np.cfloat)
 >>> for t in range(timesteps):
@@ -339,7 +343,7 @@ $\large \bf{References}$
 ...     psi2_new = psi2_new / np.linalg.norm(psi2_new)
 ...     psi2_old = psi2_new
 ...     psi2_plot[:,:,t+1] = psi2_new.reshape(nodes, -1) #reshape for plotting
-...     if (t+1)%5 == 0:
+...     if (t+1)%anim_constant == 0:
 ...         psi2_animate[:,:,anim_count] = psi2_plot[:,:,t+1]
 ...         anim_count += 1
 ```
@@ -355,7 +359,6 @@ $\large \bf{References}$
 >>> Z = np.zeros(X_wall.shape)
 >>> z = np.absolute(psi2_animate)
 >>> Z_wall = z[:,wall:,:]
-...
 ...
 >>> interference_no_wall = animation_2d_no_wall()
 >>> plt.show()
@@ -393,7 +396,7 @@ $\large \bf{References}$
 >>> a = 1 / (nodes-1)
 >>> x = np.linspace(xmin, xmax, nodes)
 >>> middle = int(nodes / 2)
->>> timesteps = 500
+>>> timesteps = 5000
 ...
 >>> #Make initial wave function using x-lexicographic ordering of gridpoints
 ... psi_sq = np.zeros(shape = (nodes, nodes), dtype= np.cfloat)
@@ -430,14 +433,21 @@ $\large \bf{References}$
 ...
 >>> #Using a bicgstab algorithm, solve A*psi(n+1) = B*psi(n) for psi(n+1)
 ...
-... psi_sq_old = psi_sq
+... anim_constant = 10
+>>> anim_count = 0
+>>> animation_frames = int((timesteps+1)/anim_constant)
+>>> psi_sq_old = psi_sq
 >>> psi_sq_new = psi_sq
+>>> psi_animate = np.zeros((nodes,nodes,animation_frames), dtype = np.cfloat)
 >>> for t in range(timesteps):
 ...     b = B2D.dot(psi_sq_old)
 ...     psi_sq_new = linalg.bicgstab(A2D, b)[0]
 ...     psi_sq_new = psi_sq_new / np.linalg.norm(psi_sq_new)
 ...     psi_sq_old = psi_sq_new
 ...     psi_sq_plot[:,:,t+1] = psi_sq_new.reshape(nodes, -1) #reshape for plotting
+...     if (t+1)%anim_constant == 0:
+...         psi_animate[...,anim_count] = psi_sq_plot[...,t+1]
+...         anim_count += 1
 ```
 
 ```python
@@ -446,7 +456,7 @@ $\large \bf{References}$
 >>> xx= range(nodes)
 >>> X,Y = np.meshgrid(xx, xx)
 >>> Z = np.zeros(X.shape)
->>> z = np.absolute(psi_sq_plot)
+>>> z = np.absolute(psi_animate)
 >>> V = V_sq
 ...
 >>> anim_sq_well_2d = animation_2d()
@@ -528,9 +538,6 @@ $\large \bf{References}$
 ... animtunnel = animation.FuncAnimation(fig, animate, init_func=init, frames=timesteps, interval=20, blit=True, repeat=False)
 ...
 >>> plt.show()
-```
-
-```python
 ```
 
 ```python
