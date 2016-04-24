@@ -17,6 +17,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 >>> import matplotlib.cm as cm
 >>> from IPython.display import Image
 >>> from matplotlib import rc
+>>> from IPython.display import IFrame
 ...
 >>> # Define font for figures
 ... rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -356,10 +357,20 @@ The transmission coefficient T is calculated by taking the squared norm of the w
 >>> save_anim(animtunnel,'tunneling_closeup_500t_300p')
 ```
 
+The literature states that the Transmission will be described by the following curve (Image by B. Simons)
+<img src="trans-resonance.png", height = 200, width = 350>
+
+The found Transmission coefficient is
+
+```python
+>>> IFrame("Transmission_coefficient.pdf", width=800, height=450)
+<IPython.lib.display.IFrame at 0x10add1278>
+```
+
 # Crank-Nicholson in two dimensions
 
 The 2D method of Crank-Nicholson makes use of a lexicographic ordering of nodes (image taken from [2]),
-<img src="lexicograph.png",width=200,height=200>.
+<img src="lexicograph.png",width = 200,height=200>.
 
 This results in the solution vector $u \in \mathbb{R}^{nodes^2}$ and the Coefficient matrix $A \in \mathbb{R}^{(nodes^2)~ \times~ (nodes^2)}$.
 
