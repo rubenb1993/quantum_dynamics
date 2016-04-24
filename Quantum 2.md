@@ -2,21 +2,25 @@
 
 Code by Ruben Biesheuvel and Alexander Harms
 
-This code uses a Crank-Nicholson method to evaluate the time evaluation of a wave function governed by the SchrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶dinger equation.
+This code uses a Crank-Nicholson method to evaluate the time evaluation of a wave function governed by the Schrödinger equation.
 
 ```python
 >>> import numpy as np
 >>> import matplotlib.pyplot as plt
 >>> import scipy.sparse as sp
->>> import matplotlib
+>>> import matplotlib #sometimes animation does not work, hence also matplotlib is imported
 >>> from math import pi
 >>> import math
 >>> import scipy.sparse.linalg as linalg
 >>> from sympy.functions.special.delta_functions import Heaviside
->>> from mpl_toolkits.mplot3d import Axes3D
 >>> from matplotlib import animation
 >>> import matplotlib.cm as cm
 >>> from IPython.display import Image
+>>> from matplotlib import rc
+...
+>>> # Define font for figures
+... rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+>>> rc('text', usetex=True)
 ...
 >>> #%matplotlib inline
 ```
@@ -91,8 +95,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 ...             interval=1, repeat=False,  init_func=init_2d,)
 ...     return anim2D
 ...
->>> #Function to save the animation
-... def save_anim(file, title):
+>>> def save_anim(file, title):
 ...     "saves the animation with a desired title"
 ...     Writer = animation.writers['ffmpeg']
 ...     writer = Writer(fps=25, metadata=dict(artist='Me'), bitrate=1800)
@@ -101,7 +104,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 
 # Crank Nicholson for square well
 
-A stationary Guassian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the SchrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¶dinger equation. This is approximated using a Crank Nicholson method, and with continous boundary conditions (i.e. the x axis begin is "tied" to the end). The equation that is solved with the Crank Nicholson method is the following
+A stationary Guassian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the Schrödinger equation. This is approximated using a Crank Nicholson method, and with continous boundary conditions (i.e. the x axis begin is "tied" to the end). The equation that is solved with the Crank Nicholson method is the following
 
 $$ i \hbar \frac{\psi(t+h) - \psi(t)}{h} = \frac{ \hat{H} \psi(t) + \hat{H} \psi(t+h)}{2}$$,
 
@@ -301,7 +304,8 @@ $\large \bf{References}$
 >>> wall = int(2*nodes / 3)
 >>> middle = int(nodes / 2)
 ...
->>> #Make initial wave function using x-lexicographic ordering of gridpoints
+>>> #Make initial wave function using x-lexicographic ordering of gridpoints, by first making a 1d gaussian
+... #and then stacking it vertically
 ... psi = np.zeros(shape = (len(x), ), dtype= np.cfloat)
 >>> width = 0.03
 >>> p0 = 500
@@ -319,8 +323,8 @@ $\large \bf{References}$
 >>> # Make potential barrier
 ... V = np.zeros((nodes, nodes))
 >>> V0 = 1e6
->>> aa = 5
->>> bb = 10
+>>> aa = 5 #width of barrier between the holes in nodes
+>>> bb = 10 #width of the holes in nodes
 >>> for xx in range(nodes):
 ...     V[xx,wall] = V0 * (math.ceil((Heaviside(xx) - Heaviside(xx - (middle - bb - 0.5*aa))) + (Heaviside(xx - (middle - 0.5*aa)) \
 ...                       - Heaviside(xx - (middle + 0.5*aa))) + Heaviside(xx - (middle + 0.5*aa + bb))))
@@ -338,14 +342,14 @@ $\large \bf{References}$
 ...
 >>> # Using a bicgstab algorithm, solve A*psi(n+1) = B*psi(n) for psi(n+1)
 ...
-... psi2_old = psi2
->>> psi2_new = psi2
-...
->>> anim_constant = 10
+... anim_constant = 10
 >>> anim_count = 0
 >>> animation_frames = int((timesteps+1)/anim_constant)
-...
 >>> psi2_animate  = np.zeros((nodes, nodes, animation_frames), dtype=np.cfloat)
+...
+>>> psi2_old = psi2
+>>> psi2_new = psi2
+...
 >>> for t in range(timesteps):
 ...     b = B2D.dot(psi2_old)
 ...     psi2_new = linalg.bicgstab(A2D, b)[0]
@@ -422,8 +426,8 @@ $\large \bf{References}$
 >>> # Make Potential barrier
 ... V_sq = np.ones((nodes, nodes))
 >>> V0 = 1e7
->>> aa = 2**7-2
->>> bb = 2**7-2
+>>> aa = 2**7-2 #width of rectengular potential
+>>> bb = 2**7-2 #height of rectengular potential
 ...
 >>> V_sq[middle - 0.5*aa:middle + 0.5*aa, middle - 0.5*bb:middle + 0.5*bb] = 0
 >>> V_sq = V0 * V_sq
@@ -445,9 +449,11 @@ $\large \bf{References}$
 ... anim_constant = 10
 >>> anim_count = 0
 >>> animation_frames = int((timesteps+1)/anim_constant)
+...
 >>> psi_sq_old = psi_sq
 >>> psi_sq_new = psi_sq
 >>> psi_animate = np.zeros((nodes, nodes, animation_frames), dtype=np.cfloat)
+...
 >>> for t in range(timesteps):
 ...     b = B2D.dot(psi_sq_old)
 ...     psi_sq_new = linalg.bicgstab(A2D, b)[0]
@@ -481,9 +487,9 @@ $\large \bf{References}$
 ```python
 >>> # Set parameters
 ... h = 1e-5  # timestep size
->>> xmin = 0
->>> xmax = 10
->>> nodes = 5000
+>>> xmin = 3
+>>> xmax = 7
+>>> nodes = 10000
 ...
 >>> a = (xmax - xmin) / (nodes-1)  # space between nodes
 >>> x = np.linspace(xmin, xmax, nodes)
@@ -498,14 +504,14 @@ $\large \bf{References}$
 ...
 >>> # Set up potential wall with the height of E0 divided by a factor
 ... E0 = p0**2 / 2
->>> parameters = [0.9]
+>>> parameters = np.linspace(0.1,4.1,101)
 >>> T = np.zeros((len(parameters), 1))
 ...
 >>> for m in range(len(parameters)):
 ...     V = np.zeros(nodes)
 ...     V0 = E0 / parameters[m]
 ...     for xx in range(nodes):
-...         V[xx] =  - V0 * (Heaviside(5/a - xx) - Heaviside(5/a + int(7/(a*np.sqrt(2*V0))) - xx))
+...         V[xx] =  - V0 * (Heaviside(int(nodes/2) - xx) - Heaviside(int(nodes/2) + np.int(7/(a*np.sqrt(2*V0))) - xx))
 ...
 ...     # Create matrix A
 ...     A = sp.diags([1 / (4*a**2), 1j/h - 1/(2*a**2), 1 / (4*a**2)], [-1, 0 ,1], shape=(nodes, nodes)).tolil()
@@ -517,33 +523,45 @@ $\large \bf{References}$
 ...     B += 0.5*sp.diags(V, 0)
 ...     B = B.tocsc()
 ...
+...     anim_constant = 1
+...     animation_frames = int((timesteps+1)/anim_constant)
+...     anim_count = 0
+...
 ...     for t in range(timesteps):
 ...         b = B.dot(psi[:, t])
 ...         psi[:, t+1] = linalg.bicgstab(A, b)[0]
 ...         psi[:, t+1] = psi[:, t+1] / np.linalg.norm(psi[:, t+1])
+...         anim_count += 1
 ...
+...     #calculate the ratio between the transmitted wave and original wave (psi was normalized)
 ...     T[m] = np.linalg.norm(psi[int(0.5*nodes):, timesteps])**2
 ```
 
 ```python
 >>> #Plot the transmission coefficient
-... plt.figure()
->>> plt.plot(parameters, T)
+... fig = plt.figure(figsize=(6, 3.7))
+>>> plt.plot(parameters, T, 'or-', markersize = 3, label = r'$T$')
+>>> plt.xlabel(r'$ E / V_0$', fontsize = 9)
+>>> plt.ylabel(r'Transmission Coefficient')
 >>> plt.show()
 ```
 
 ```python
->>> psi_animate = psi
+>>> fig.savefig('Transmission_coefficient.pdf', bbox_inches='tight', pad_inches=0.1)
+```
+
+```python
+>>> #animate wave through a potential barrier
+... psi_animate = psi
 >>> fig = plt.figure()
->>> ax = plt.axes(xlim=(0, xmax), ylim=(0, 1))
+>>> ax = plt.axes(xlim=(3, 7), ylim=(0, 1))
 >>> line, = ax.plot([], [], lw=2)
 >>> V_x, = ax.plot([],[], lw=2)
 ...
->>> # call the animator.  blit=True means only re-draw the parts that have changed.
-... animtunnel = animation_1D()
+>>> animtunnel = animation_1D()
 >>> plt.show()
 ```
 
 ```python
->>> save_anim(animtunnel,'tunneling_500t_300p')
+>>> save_anim(animtunnel,'tunneling_closeup_500t_300p')
 ```
