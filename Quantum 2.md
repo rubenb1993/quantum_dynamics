@@ -22,7 +22,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 ```
 
 ```python
->>> #Functions for 1D animations
+>>> #Functions for 1D and 2D animations
 ...
 ... # initialization function: plot the background of each frame
 ... def init_1D():
@@ -141,7 +141,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ...
 >>> a = (xmax - xmin) / (nodes-1)  # space between nodes
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 500
+>>> timesteps = 20000
 ...
 >>> # initial wave function
 ... psi = np.zeros(shape=(nodes, timesteps+1), dtype=np.cfloat)
@@ -168,7 +168,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> B += 0.5*sp.diags(V, 0)
 >>> B = B.tocsc()
 ...
->>> anim_constant = 5
+>>> anim_constant = 10
 >>> anim_count = 0
 >>> animation_frames = int((timesteps+1)/anim_constant)
 ...
@@ -196,7 +196,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ```
 
 ```python
->>> save_anim(anim_sq_well,'square_well')
+>>> save_anim(anim_sq_well,'square_well_20k')
 ```
 
 # Crank-Nicholson for tunneling
@@ -204,7 +204,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ```python
 >>> # Set up parameters
 ... h = 1e-5
->>> nodes = 2000
+>>> nodes = 2**8
 >>> xmin = 0
 >>> xmax = 1
 >>> a = (xmax - xmin) / (nodes-1)
@@ -214,8 +214,8 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> # Set up wave funciton
 ... psi = np.zeros(shape=(nodes, timesteps+1), dtype=np.cfloat)
 >>> width = 0.01
->>> p0 = 30
->>> psi[:, 0] = np.exp(-((x - 0.52)**2 / (2*width**2))) * np.exp(1j*x*p0)
+>>> p0 = 300
+>>> psi[:, 0] = np.exp(-((x - 0.4)**2 / (2*width**2))) * np.exp(1j*x*p0)
 >>> psi[:, 0] = psi[:, 0] / np.linalg.norm(psi[:, 0])
 ...
 >>> # Set up potential wall with height E0/0.6
@@ -301,10 +301,10 @@ $\large \bf{References}$
 >>> wall = int(2*nodes / 3)
 >>> middle = int(nodes / 2)
 ...
->>> # Make initial wave function using x-lexicographic ordering of gridpoints
-... psi = np.zeros(shape=(len(x), ), dtype=np.cfloat)
->>> width = 0.05
->>> p0 = 5000
+>>> #Make initial wave function using x-lexicographic ordering of gridpoints
+... psi = np.zeros(shape = (len(x), ), dtype= np.cfloat)
+>>> width = 0.03
+>>> p0 = 500
 >>> E0 = p0**2 / 2
 >>> wave_position = np.arange(0, wall*a - 3*width, 3*width)
 >>> for i in range(len(wave_position)):
@@ -341,7 +341,7 @@ $\large \bf{References}$
 ... psi2_old = psi2
 >>> psi2_new = psi2
 ...
->>> anim_constant = 5
+>>> anim_constant = 10
 >>> anim_count = 0
 >>> animation_frames = int((timesteps+1)/anim_constant)
 ...
@@ -374,7 +374,7 @@ $\large \bf{References}$
 ```
 
 ```python
->>> save_anim(interference_no_wall,'interference_no_wall')
+>>> save_anim(interference_no_wall,'interference_no_wall_500p_5000t')
 ```
 
 ```python
@@ -457,7 +457,6 @@ $\large \bf{References}$
 ...     if (t+1) % anim_constant == 0:
 ...         psi_animate[..., anim_count] = psi_sq_plot[..., t+1]
 ...         anim_count += 1
-C:\Anaconda3\lib\site-packages\ipykernel\__main__.py:29: DeprecationWarning: using a non-integer number instead of an integer will result in an error in the future
 ```
 
 ```python
@@ -499,7 +498,7 @@ C:\Anaconda3\lib\site-packages\ipykernel\__main__.py:29: DeprecationWarning: usi
 ...
 >>> # Set up potential wall with the height of E0 divided by a factor
 ... E0 = p0**2 / 2
->>> parameters = np.linspace(0.1, 3.1, 31)
+>>> parameters = [0.9]
 >>> T = np.zeros((len(parameters), 1))
 ...
 >>> for m in range(len(parameters)):
@@ -534,5 +533,17 @@ C:\Anaconda3\lib\site-packages\ipykernel\__main__.py:29: DeprecationWarning: usi
 ```
 
 ```python
+>>> psi_animate = psi
+>>> fig = plt.figure()
+>>> ax = plt.axes(xlim=(0, xmax), ylim=(0, 1))
+>>> line, = ax.plot([], [], lw=2)
+>>> V_x, = ax.plot([],[], lw=2)
+...
+>>> # call the animator.  blit=True means only re-draw the parts that have changed.
+... animtunnel = animation_1D()
+>>> plt.show()
+```
 
+```python
+>>> save_anim(animtunnel,'tunneling_500t_300p')
 ```
