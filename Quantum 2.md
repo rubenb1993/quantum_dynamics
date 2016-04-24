@@ -2,7 +2,7 @@
 
 Code by Ruben Biesheuvel and Alexander Harms
 
-This code uses a Crank-Nicholson method to evaluate the time evaluation of a wave function governed by the Schrödinger equation.
+This code uses a Crank-Nicholson method to evaluate the time evaluation of a wave function governed by the SchrÃ¶dinger equation.
 
 ```python
 >>> import numpy as np
@@ -21,8 +21,6 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 >>> # Define font for figures
 ... rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 >>> rc('text', usetex=True)
-...
->>> #%matplotlib inline
 ```
 
 ```python
@@ -33,7 +31,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 ...     "Initializes the 1d animation with a clean slate"
 ...     line.set_data([], [])
 ...     V_x.set_data([], [])
-...     return line,V_x,
+...     return line, V_x,
 ...
 ...
 >>> # animation function.  This is called sequentially for every frame.
@@ -83,7 +81,7 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 ...
 >>> def animate_2d(t):
 ...     "sets the frames for the animation in 2d with the whole domain"
-...     Z = z[:,:,t]
+...     Z = z[:, :, t]
 ...     cont = ax.contourf(X, Y, Z, cmap=cm.bone)
 ...     V_x = ax.contour(xx, xx, V)
 ...     return cont, V_x
@@ -102,9 +100,9 @@ This code uses a Crank-Nicholson method to evaluate the time evaluation of a wav
 ...     file.save(title + '.mp4', writer=writer)
 ```
 
-# Crank Nicholson for square well
+# Crank-Nicholson for square well
 
-A stationary Guassian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the Schrödinger equation. This is approximated using a Crank Nicholson method, and with continous boundary conditions (i.e. the x axis begin is "tied" to the end). The equation that is solved with the Crank Nicholson method is the following
+A stationary Gaussian Wave packet is initialized in an "infinite" potential well. The time evolution of the wave equation is calculated through the SchrÃ¶dinger equation. This is approximated using the Crank-Nicholson method and with Dirichlet boundary conditions; the begin and the end of the domain is put to zero. The equation that is solved with the Crank-Nicholson method is the following
 
 $$ i \hbar \frac{\psi(t+h) - \psi(t)}{h} = \frac{ \hat{H} \psi(t) + \hat{H} \psi(t+h)}{2}$$,
 
@@ -175,7 +173,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> anim_count = 0
 >>> animation_frames = int((timesteps+1)/anim_constant)
 ...
->>> psi_animate = np.zeros(shape=(nodes,animation_frames), dtype=np.cfloat)
+>>> psi_animate = np.zeros(shape=(nodes, animation_frames), dtype=np.cfloat)
 >>> for t in range(timesteps):
 ...     b = B.dot(psi[:, t])
 ...     psi[:, t+1] = linalg.bicgstab(A, b)[0]
@@ -203,6 +201,12 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ```
 
 # Crank-Nicholson for tunneling
+
+The Schrödinger equation can also be solved for a scenario in which a Gaussian wave packet is traveling towards a potential barrier and even peforms tunneling behaviour. The height of the potential is determined as a function of the energy of the kinetic energy of the particle $V_0 = E_0/c_{\text{pot.}}$ [1], where $V_0$ is the height of the potential and $E_0$ is the kinetic energy of the particle. The arbitrary constant $c_{\text{pot.}}$ determines the height of the potential barrier as a ratio of the kinetic energy. The transmission probability is nearly 1 for high values of the constant and for low values the transmission will be negligible. The width of the barrier $d$ is given by $d =7\hbar/\sqrt{2mV_0}$ where $m$ is the mass of the particle [1].
+
+# References:
+
+[1] B. Simons. $\textit{Lecture notes from the course Advanced Quantum Mechanics}$, University of Cambridge. 2009. [Accessed online on 24-4-2016 at http://www.tcm.phy.cam.ac.uk/~bds10/aqp/handout_1d.pdf]
 
 ```python
 >>> # Set up parameters
@@ -266,14 +270,100 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> save_anim(animtunnel,'1d_tunnel')
 ```
 
+# Calculation of the transmission coefficient
+
+The transmission coefficient T is calculated by taking the squared norm of the wave function in the region on the right of the potential barrier when a wave has tunneled and dividing it by the squared norm of the incoming wave. The incoming wave will have a squared norm of one because it is a normalized wave function. This calculation of T is done for a number of heights of the potential barrier by varying the ratio $E/V_0$.
+
+```python
+>>> # Set parameters
+... h = 1e-5  # timestep size
+>>> xmin = 3
+>>> xmax = 7
+>>> nodes = 10000
+...
+>>> a = (xmax - xmin) / (nodes-1)  # space between nodes
+>>> x = np.linspace(xmin, xmax, nodes)
+>>> timesteps = 500
+...
+>>> # initial wave function
+... psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
+>>> width = 0.1
+>>> p0 = 300
+>>> psi[:, 0] = np.exp(-((x-4.5)**2 / (2*width**2)))*np.exp(1j*x*p0)
+>>> psi[:, 0] = psi[:, 0] / np.linalg.norm(psi[:, 0])
+...
+>>> # Set up potential wall with the height of E0 divided by a factor
+... E0 = p0**2 / 2
+>>> parameters = np.linspace(0.1,4.1,101)
+>>> T = np.zeros((len(parameters), 1))
+...
+>>> for m in range(len(parameters)):
+...     V = np.zeros(nodes)
+...     V0 = E0 / parameters[m]
+...     for xx in range(nodes):
+...         V[xx] =  - V0 * (Heaviside(int(nodes/2) - xx) - Heaviside(int(nodes/2) + np.int(7/(a*np.sqrt(2*V0))) - xx))
+...
+...     # Create matrix A
+...     A = sp.diags([1 / (4*a**2), 1j/h - 1/(2*a**2), 1 / (4*a**2)], [-1, 0 ,1], shape=(nodes, nodes)).tolil()
+...     A -= 0.5 * sp.diags(V, 0)
+...     A = A.tocsc()
+...
+...     # Create matrix B
+...     B = sp.diags([-1 / (4*a**2), 1j/h + 1/(2*a**2), -1 / (4*a**2)], [-1, 0, 1], shape=(nodes, nodes)).tolil()
+...     B += 0.5*sp.diags(V, 0)
+...     B = B.tocsc()
+...
+...     anim_constant = 1
+...     animation_frames = int((timesteps+1)/anim_constant)
+...     anim_count = 0
+...
+...     for t in range(timesteps):
+...         b = B.dot(psi[:, t])
+...         psi[:, t+1] = linalg.bicgstab(A, b)[0]
+...         psi[:, t+1] = psi[:, t+1] / np.linalg.norm(psi[:, t+1])
+...         anim_count += 1
+...
+...     #calculate the ratio between the transmitted wave and original wave (psi was normalized)
+...     T[m] = np.linalg.norm(psi[int(0.5*nodes):, timesteps])**2
+```
+
+```python
+>>> #Plot the transmission coefficient
+... fig = plt.figure(figsize=(6, 3.7))
+>>> plt.plot(parameters, T, 'or-', markersize = 3, label = r'$T$')
+>>> plt.xlabel(r'$ E / V_0$', fontsize = 9)
+>>> plt.ylabel(r'Transmission Coefficient')
+>>> plt.show()
+```
+
+```python
+>>> fig.savefig('Transmission_coefficient.pdf', bbox_inches='tight', pad_inches=0.1)
+```
+
+```python
+>>> #animate wave through a potential barrier
+... psi_animate = psi
+>>> fig = plt.figure()
+>>> ax = plt.axes(xlim=(3, 7), ylim=(0, 1))
+>>> line, = ax.plot([], [], lw=2)
+>>> V_x, = ax.plot([], [], lw=2)
+...
+>>> animtunnel = animation_1D()
+>>> plt.show()
+```
+
+```python
+>>> save_anim(animtunnel,'tunneling_closeup_500t_300p')
+```
+
 # Crank-Nicholson in two dimensions
 
-The 2D method of Crank-Nicholson makes use of a lexicographic ordering of nodes (image taken from [1]),
+The 2D method of Crank-Nicholson makes use of a lexicographic ordering of nodes (image taken from [2]),
 <img src="lexicograph.png",width=200,height=200>.
 
 This results in the solution vector $u \in \mathbb{R}^{nodes^2}$ and the Coefficient matrix $A \in \mathbb{R}^{(nodes^2)~ \times~ (nodes^2)}$.
 
-For this two dimensional problem, the boundary conditions are taken to be Dirichlet boundary conditions, with the forcing term equal to 0 for simplicity. If this is done, the coefficient matrix can be expressed as [1]:
+For this two dimensional problem, the boundary conditions are taken to be Dirichlet boundary conditions, with the forcing term equal to 0 for simplicity. If this is done, the coefficient matrix can be expressed as [2]:
 
 $$\hat{H}_{2D} = \hat{H}_{1D} \otimes \mathbb{1} + \mathbb{1} \otimes \hat{H}_{1D}$$,
 
@@ -289,7 +379,9 @@ This system is again solved with a BiCGStab algorithm.
 
 $\large \bf{References}$
 
-[1] C. Vuik and D.J.P. Lahaye. $\textit{Lecture notes in Scientific Computing}$. Sept. 2015.
+[1] C. Vuik and D.J.P. Lahaye. $\textit{Lecture notes in Scientific Computing}$. Delft University of Technology. Sept. 2015.
+
+# Double slit experiment in two dimensions
 
 ```python
 >>> # Set up parameters
@@ -479,88 +571,4 @@ $\large \bf{References}$
 
 ```python
 >>> save_anim(anim_sq_well_2d, 'Square_well_2d')
-```
-
-# Calculation of the transmission coefficient
-
-```python
->>> # Set parameters
-... h = 1e-5  # timestep size
->>> xmin = 3
->>> xmax = 7
->>> nodes = 10000
-...
->>> a = (xmax - xmin) / (nodes-1)  # space between nodes
->>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 500
-...
->>> # initial wave function
-... psi = np.zeros(shape = (nodes, timesteps+1), dtype= np.cfloat)
->>> width = 0.1
->>> p0 = 300
->>> psi[:, 0] = np.exp(-((x-4.5)**2 / (2*width**2)))*np.exp(1j*x*p0)
->>> psi[:, 0] = psi[:, 0] / np.linalg.norm(psi[:, 0])
-...
->>> # Set up potential wall with the height of E0 divided by a factor
-... E0 = p0**2 / 2
->>> parameters = np.linspace(0.1,4.1,101)
->>> T = np.zeros((len(parameters), 1))
-...
->>> for m in range(len(parameters)):
-...     V = np.zeros(nodes)
-...     V0 = E0 / parameters[m]
-...     for xx in range(nodes):
-...         V[xx] =  - V0 * (Heaviside(int(nodes/2) - xx) - Heaviside(int(nodes/2) + np.int(7/(a*np.sqrt(2*V0))) - xx))
-...
-...     # Create matrix A
-...     A = sp.diags([1 / (4*a**2), 1j/h - 1/(2*a**2), 1 / (4*a**2)], [-1, 0 ,1], shape=(nodes, nodes)).tolil()
-...     A -= 0.5 * sp.diags(V, 0)
-...     A = A.tocsc()
-...
-...     # Create matrix B
-...     B = sp.diags([-1 / (4*a**2), 1j/h + 1/(2*a**2), -1 / (4*a**2)], [-1, 0, 1], shape=(nodes, nodes)).tolil()
-...     B += 0.5*sp.diags(V, 0)
-...     B = B.tocsc()
-...
-...     anim_constant = 1
-...     animation_frames = int((timesteps+1)/anim_constant)
-...     anim_count = 0
-...
-...     for t in range(timesteps):
-...         b = B.dot(psi[:, t])
-...         psi[:, t+1] = linalg.bicgstab(A, b)[0]
-...         psi[:, t+1] = psi[:, t+1] / np.linalg.norm(psi[:, t+1])
-...         anim_count += 1
-...
-...     #calculate the ratio between the transmitted wave and original wave (psi was normalized)
-...     T[m] = np.linalg.norm(psi[int(0.5*nodes):, timesteps])**2
-```
-
-```python
->>> #Plot the transmission coefficient
-... fig = plt.figure(figsize=(6, 3.7))
->>> plt.plot(parameters, T, 'or-', markersize = 3, label = r'$T$')
->>> plt.xlabel(r'$ E / V_0$', fontsize = 9)
->>> plt.ylabel(r'Transmission Coefficient')
->>> plt.show()
-```
-
-```python
->>> fig.savefig('Transmission_coefficient.pdf', bbox_inches='tight', pad_inches=0.1)
-```
-
-```python
->>> #animate wave through a potential barrier
-... psi_animate = psi
->>> fig = plt.figure()
->>> ax = plt.axes(xlim=(3, 7), ylim=(0, 1))
->>> line, = ax.plot([], [], lw=2)
->>> V_x, = ax.plot([],[], lw=2)
-...
->>> animtunnel = animation_1D()
->>> plt.show()
-```
-
-```python
->>> save_anim(animtunnel,'tunneling_closeup_500t_300p')
 ```
