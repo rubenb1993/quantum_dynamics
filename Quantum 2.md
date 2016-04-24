@@ -207,28 +207,35 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 ```python
 >>> # Set up parameters
 ... h = 1e-5
->>> nodes = 2**8
+>>> nodes = 2000
 >>> xmin = 0
 >>> xmax = 1
 >>> a = (xmax - xmin) / (nodes-1)
 >>> x = np.linspace(xmin, xmax, nodes)
->>> timesteps = 1000
+>>> timesteps = 450
 ...
 >>> # Set up wave funciton
 ... psi = np.zeros(shape=(nodes, timesteps+1), dtype=np.cfloat)
->>> width = 0.01
->>> p0 = 300
->>> psi[:, 0] = np.exp(-((x - 0.4)**2 / (2*width**2))) * np.exp(1j*x*p0)
+>>> width = 0.05
+>>> p0 = 100
+>>> E0 = p0**2/2
+>>> psi[:, 0] = np.exp(-((x - 0.3)**2 / (2*width**2))) * np.exp(1j*x*p0)
 >>> psi[:, 0] = psi[:, 0] / np.linalg.norm(psi[:, 0])
 ...
->>> # Set up potential wall with height E0/0.6
-... E0 = p0**2 / 2
->>> V0 = E0 / 0.6
 >>> V = np.zeros(nodes)
+>>> V0 = E0 / 0.6
 >>> for xx in range(nodes):
-...     V[xx] =  -V0 * (Heaviside(0.55/a - xx) - Heaviside(0.55/a + 1/(a*np.sqrt(V0)) - xx))
+...     V[xx] =  - V0 * (Heaviside(int(nodes/2) - xx) - Heaviside(int(nodes/2) + np.int(7/(a*np.sqrt(2*V0))) - xx))
 ...
->>> # Create left hand side matrix
+...
+>>> # # Set up potential wall with height E0/0.6
+... # E0 = p0**2 / 2
+... # V0 = E0 / 0.6
+... # V = np.zeros(nodes)
+... # for xx in range(nodes):
+... #     V[xx] =  -V0 * (Heaviside(0.55/a - xx) - Heaviside(0.55/a + 1/(a*np.sqrt(V0)) - xx))
+...
+... # Create left hand side matrix
 ... A = sp.diags([1 / (4*a**2), 1j/h - 1/(2*a**2), 1 / (4*a**2)], [-1, 0 ,1],shape=(nodes, nodes)).tolil()
 >>> A -= 0.5 * sp.diags(V, 0)
 >>> A = A.tocsc()
