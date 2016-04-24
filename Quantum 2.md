@@ -227,15 +227,7 @@ In this code, the BiCGStab algorithm has been implemented due to it being readil
 >>> for xx in range(nodes):
 ...     V[xx] =  - V0 * (Heaviside(int(nodes/2) - xx) - Heaviside(int(nodes/2) + np.int(7/(a*np.sqrt(2*V0))) - xx))
 ...
-...
->>> # # Set up potential wall with height E0/0.6
-... # E0 = p0**2 / 2
-... # V0 = E0 / 0.6
-... # V = np.zeros(nodes)
-... # for xx in range(nodes):
-... #     V[xx] =  -V0 * (Heaviside(0.55/a - xx) - Heaviside(0.55/a + 1/(a*np.sqrt(V0)) - xx))
-...
-... # Create left hand side matrix
+>>> # Create left hand side matrix
 ... A = sp.diags([1 / (4*a**2), 1j/h - 1/(2*a**2), 1 / (4*a**2)], [-1, 0 ,1],shape=(nodes, nodes)).tolil()
 >>> A -= 0.5 * sp.diags(V, 0)
 >>> A = A.tocsc()
